@@ -163,7 +163,7 @@ fun SearchScreen(navController: NavController, initialQuery: String = "") {
 
     // Suggestions / history (autocomplete)
     var searchFocused by remember { mutableStateOf(false) }
-    var suggestions by remember { mutableStateOf<List<Suggestion>>(emptyList<>())
+    var suggestions by remember { mutableStateOf<List<Suggestion>>(emptyList()) }
 
     // Debounced autocomplete fetch while the search field is focused
     LaunchedEffect(query, searchFocused) {
