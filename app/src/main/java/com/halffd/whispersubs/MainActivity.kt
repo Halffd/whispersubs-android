@@ -12,7 +12,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -24,7 +23,6 @@ import com.halffd.whispersubs.data.LocalLibraryRepository
 import com.halffd.whispersubs.data.ServerConfig
 import com.halffd.whispersubs.ui.channels.ChannelsScreen
 import com.halffd.whispersubs.ui.channels.ChannelVideosScreen
-import com.halffd.whispersubs.ui.connect.ConnectScreen
 import com.halffd.whispersubs.ui.home.HomeScreen
 import com.halffd.whispersubs.ui.home.VideosScreen
 import com.halffd.whispersubs.ui.history.HistoryScreen
@@ -56,7 +54,13 @@ class MainActivity : ComponentActivity() {
 
     private var isConnected by mutableStateOf(false)
 
-    /** Pending route from an onNewIntent deep link; consumed by AppNavHost. */
+    /**
+     * Pending route from an onNewIntent deep link.
+     *
+     * `AppNavHost` is a private top-level composable, so it cannot read this
+     * activity's private field directly — the initial route is passed in and
+     * later ones arrive through [onNewIntent] via [consumeDeepLink].
+     */
     private val deepLinkRoute = mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,6 +73,11 @@ class MainActivity : ComponentActivity() {
                     AppNavHost(
                         startDestination = if (isConnected) "home" else "connect",
                         initialDeepLink = deepLink,
+                        onLiveDeepLink = {
+                            val pending = deepLinkRoute.value
+                            deepLinkRoute.value = null
+                            pending
+                        },
                         onConnected = { isConnected = true },
                         serverConfig = serverConfig,
                     )
@@ -132,11 +141,12 @@ class MainActivity : ComponentActivity() {
 private fun AppNavHost(
     startDestination: String,
     initialDeepLink: String? = null,
+    /** Reads and clears the route a late deep link (onNewIntent) parked. */
+    onLiveDeepLink: () -> String?,
     onConnected: () -> Unit,
     serverConfig: ServerConfig,
 ) {
     val navController: NavHostController = rememberNavController()
-    val context = LocalContext.current
 
     // A deep link can arrive before (intent) or after (onNewIntent, kept on
     // the activity as state) the NavHost composes. Both paths land here:
@@ -153,11 +163,9 @@ private fun AppNavHost(
         }
     }
     LaunchedEffect(Unit) { consumeDeepLink(pendingDeepLink.value) }
-    (context as? MainActivity)?.let { activity ->
-        LaunchedEffect(activity.deepLinkRoute.value) {
-            consumeDeepLink(activity.deepLinkRoute.value)
-            activity.deepLinkRoute.value = null
-        }
+    LaunchedEffect(Unit) {
+        val live = onLiveDeepLink()
+        consumeDeepLink(live)
     }
 
     NavHost(navController = navController, startDestination = startDestination) {

@@ -561,7 +561,6 @@ fun PlayerScreen(
         isLive = isLive,
     )
 
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF0D1117))) {
         val playerContent: @Composable () -> Unit = {
             // Flow-ish player: video stays pinned, pane scrolls beside/below it.
             Box(
@@ -853,7 +852,7 @@ fun PlayerScreen(
                     )
                 }
             }
-        }
+
 
         // Flow-style adaptive shell: side pane once the window is Expanded,
         // pane-below-player otherwise. Fullscreen and PiP stay full-bleed.
