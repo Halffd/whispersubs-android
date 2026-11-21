@@ -11,7 +11,11 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # Pinned image. ubuntu-latest is a floating tag that GitHub repoints to a
+    # newer runner (ubuntu-26.04 since 2026-11-11); that image resolved no
+    # com.google.errorprone:error_prone_annotations artifacts from its Maven
+    # Central mirror and every build failed at configuration time.
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v5
